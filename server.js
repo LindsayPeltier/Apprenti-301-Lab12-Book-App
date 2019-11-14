@@ -4,19 +4,34 @@
 require('dotenv').config();
 const express = require('express');
 const superagent = require('superagent');
-//const cors = require('cors');
-//const pg = require('pg');
+const cors = require('cors');
+const pg = require('pg');
 //const path = require('path');
 //const methodOverride = require('method-override');
 
 // Application Setup
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 // Application Middleware
 app.use(express.urlencoded({extended:true}));
 app.use(express.static('public'));
-//app.use(cors());
+app.use(cors());
+
+//Method Override
+// app.use(methodOverride(function (request, response) {
+//   if (req.body && typeof req.body === 'object' && '_method' in req.body) {
+//     console.log(req.body._method);
+//     var method = req.body._method;
+//     delete req.body._method;
+//     return method;
+//   }
+// }));
+
+//DataBase Setup
+const client = new pg.Client(process.env.DATABASE_URL);
+client.connect();
+client.on('error', err => console.error(err));
 
 // Set the view engine for server-side templating
 app.set('view engine', 'ejs');
@@ -62,23 +77,13 @@ function createSearch(request, response) {
     .catch(err => handleError(err, response));
 }
 
-// function getBooks(request, response) { //double check; this is from lecture
-//   //let SQL = 'SELECT * from book_app;';
-//   let SQL = 'SELECT * FROM BOOKS';
-//   return client.query(SQL).then(result => {
-//     const bookCount = results.rowCount;
-//     const books = results.row.map(book => newBook(book));
-//     response.render('pages/index', {savedBooks: books, bookCount: bookCount});
-//     //.catch(handleError);
-//   });
-// }
+function getBooks(request, response){
+  let SQL = `SELECT * FROM books WHERE id=$1;`; //console.log(request.params);
+  let values = [request.params.id]; return client.query(SQL, values)
+    .then(result => {
+      response.render('pages/books/show', {results: result.rows[0]}); })
+    .catch (err => errorPage(err, response)); }
 
-function getBooks(request, response) {
-  let SQL = 'SELECT * FROM books;';
-  return client.query(SQL)
-    .then (results => response.render('pages/index', {result: results.rows, count: results.rows.length}))
-    .catch(err => handleError(err, response));
-}
 
 function createBook(){
   //create a SQL statement to insert book
