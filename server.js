@@ -3,14 +3,20 @@
 // Application Dependencies
 const express = require('express');
 const superagent = require('superagent');
+const cors = require('cors');
+require('dotenv').config();
+//const pg = require('pg');
+//const path = require('path');
+//const methodOverride = require('method-override');
 
 // Application Setup
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Application Middleware
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({extended:true}));
 app.use(express.static('public'));
+app.use(cors());
 
 // Set the view engine for server-side templating
 app.set('view engine', 'ejs');
