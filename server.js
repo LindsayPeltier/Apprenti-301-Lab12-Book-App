@@ -1,22 +1,22 @@
 'use strict';
 
 // Application Dependencies
+require('dotenv').config();
 const express = require('express');
 const superagent = require('superagent');
-const cors = require('cors');
-require('dotenv').config();
+//const cors = require('cors');
 //const pg = require('pg');
 //const path = require('path');
 //const methodOverride = require('method-override');
 
 // Application Setup
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // Application Middleware
 app.use(express.urlencoded({extended:true}));
 app.use(express.static('public'));
-app.use(cors());
+//app.use(cors());
 
 // Set the view engine for server-side templating
 app.set('view engine', 'ejs');
@@ -62,10 +62,22 @@ function createSearch(request, response) {
     .catch(err => handleError(err, response));
 }
 
-function getBooks() {
-  //create a SQL statement to get all books in the the database that was saved previously
-  //render the books on an EJS page
-  //catch any errors
+// function getBooks(request, response) { //double check; this is from lecture
+//   //let SQL = 'SELECT * from book_app;';
+//   let SQL = 'SELECT * FROM BOOKS';
+//   return client.query(SQL).then(result => {
+//     const bookCount = results.rowCount;
+//     const books = results.row.map(book => newBook(book));
+//     response.render('pages/index', {savedBooks: books, bookCount: bookCount});
+//     //.catch(handleError);
+//   });
+// }
+
+function getBooks(request, response) {
+  let SQL = 'SELECT * FROM books;';
+  return client.query(SQL)
+    .then (results => response.render('pages/index', {result: results.rows, count: results.rows.length}))
+    .catch(err => handleError(err, response));
 }
 
 function createBook(){
