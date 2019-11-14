@@ -78,11 +78,11 @@ function createSearch(request, response) {
 }
 
 function getBooks(request, response){
-  let SQL = `SELECT * FROM books WHERE id=$1;`; //console.log(request.params);
+  let SQL = `SELECT * FROM books WHERE id=$1;`;
   let values = [request.params.id]; return client.query(SQL, values)
     .then(result => {
       response.render('pages/books/show', {results: result.rows[0]}); })
-    .catch (err => errorPage(err, response)); }
+    .catch (err => handleError(err, response)); }
 
 
 function createBook(){
