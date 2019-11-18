@@ -9,12 +9,11 @@ const cors = require("cors");
 const pg = require("pg");
 const methodOverride = require("method-override");
 
-app.use(cors());
-
 // APPLICATION SETUP
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+app.use(cors());
 
 // DATABASE SETUP
 
