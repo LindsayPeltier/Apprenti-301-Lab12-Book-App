@@ -50,10 +50,11 @@ app.set("view engine", "ejs");
 // API ROUTES
 
 app.get("/", getBooks); //define route to get all books
-app.get("/searches/new", newSearch);
+app.get("/searches/new", newSearch); //new.ejs
+app.get("/books/:id", getOneBook); //show details of one book
+app.put("/books/:id", saveBook); //update single book
 app.post("/searches", createSearch);
-app.post("/books", createBook);
-app.get("/books/:id", getOneBook);
+app.post("/books", createBook); //redirect to details page
 
 // DELETE ROUTE
 app.delete("/books/:id", deleteBook);
@@ -88,7 +89,7 @@ function Book(info) {
 // HELPER FUNCTIONS
 
 function newSearch(request, response) {
-  response.render("pages/index");
+  response.render("pages/searches/new");
 }
 
 function createSearch(request, response) {
@@ -123,16 +124,68 @@ function getBooks(request, response) {
     .catch(err => handleError(err, response));
 }
 
-function createBook() {
-  //create a SQL statement to insert book
-  //return id of book back to calling function
+function createBook(request, response) {
+  let lcBookshelf = request.body.bookshelf.toLowerCase();
+  let { title, author, isbn, image_url, description } = request.body;
+  let SQL =
+    "INSERT INTO books (title, author, isbn, image_url, description, bookshelf) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id;";
+  let values = [title, author, isbn, image_url, description, lcBookshelf];
+  client
+    .query(SQL, values)
+    .then(result => response.redirect(`/books/${result.rows[0].id}`))
+    .catch(handleError);
 }
 
-function getOneBook() {
-  //use the id passed in from the front-end (ejs form)
+function getOneBook(request, response) {
+  getBookshelves()
+    .then(shelves => {
+      let SQL = "SELECT * FROM books WHERE id=$1;";
+      let values = [request.params.id];
+      client.query(SQL, values).then(result => {
+        response.render("pages/books/show", {
+          book: result.rows[0],
+          bookshelves: shelves.rows
+        });
+      });
+    })
+    .catch(handleError);
+}
+
+function getBookshelves() {
+  let SQL = "SELECT DISTINCT bookshelf FROM books ORDER BY bookshelf;";
+  return client.query(SQL);
+}
+
+function saveBook(request, response) {
+  let { title, author, isbn, image_url, description, bookshelf } = request.body;
+  let SQL =
+    "UPDATE books SET title=$1, author=$2, isbn=$3, image_url=$4, description=$5, bookshelf=$6 WHERE id=$7";
+  let values = [
+    title,
+    author,
+    isbn,
+    image_url,
+    description,
+    bookshelf,
+    request.params.id
+  ];
+  client
+    .query(SQL, values)
+    .then(response.redirect(`/books/${request.params.id}`))
+    .catch(handleError);
 }
 
 // DELETE FUNCTION
+
+function deleteBook(request, response) {
+  let SQL = "DELETE FROM books WHERE id=$1;";
+  let values = [request.params.id];
+
+  client
+    .query(SQL, values)
+    .then(response.redirect("/"))
+    .catch(handleError);
+}
 
 // ERROR FUNCTION
 
@@ -140,10 +193,6 @@ function handleError(error, response) {
   response.render("pages/error", { error: error });
 }
 
-// let errorMessage = (error, response) => {
-//   console.error(error);
-//   if (response) response.status(500).send('Internal server error encountered');
-// };
-
 //INNERVATE
+
 app.listen(PORT, () => console.log(`Listening on port: ${PORT}`));
